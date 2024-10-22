@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Evgeniy Shumilov <eashumilov@ya.ru>">
+    <title>Таймер PROmodoro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+            transition: background-color 0.3s, color 0.3s;
+            background-color: #333333; /* Темная тема по умолчанию */
+            color: #A9A9A9;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 0px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 2px solid #666;
+            border-bottom: none;
+            border-radius: 5px;
+            background-color: #404040;
+            color: #A9A9A9;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .tab.active {
+            border: 2px solid #cf0;
+            border-radius: 5px;
+            background-color: #505050;
+            color: #ffffff;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 2px solid #666;
+            border-radius: 5px;
+            /* background-color: #404040; */
+            color: #A9A9A9;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .timer-container {
+            margin-bottom: 30px;
+        }
+        .input-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Распределение пространства между элементами */
+            margin: 10px 0;
+            width: 90%; /* Ширина в 90% */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .timer-label {
+            text-align: left; /* Выравнивание label по левому краю */
+            flex: 1; /* Занимает доступное пространство */
+            font-size: 1.2em; /* Увеличенный размер шрифта */
+        }
+        input[type="number"] {
+            padding: 5px;
+            width: 60px;
+            margin: 0 5px;
+            height: 30px; /* Уменьшенная высота полей ввода */
+            border: none; /* Убираем рамку */
+            border-radius: 5px; /* Добавляем скругление углов */
+            transition: background-color 0.3s, color 0.3s;
+            text-align: center; /* Выравнивание текста по центру */
+        }
+        textarea {
+            width: 90%; /* Ширина в 90% */
+            height: 60px; /* Установка высоты в 3 строки */
+            padding: 5px;
+            resize: none; /* Запретить изменение размера */
+            margin-top: 10px;
+            display: block; /* Чтобы textarea занимала всю ширину */
+            margin-left: auto;
+            margin-right: auto;
+            border: none; /* Убираем рамку */
+            border-radius: 5px; /* Добавляем скругление углов */
+            transition: background-color 0.3s, color 0.3s;
+        }
+        button {
+            padding: 5px 15px; /* Уменьшенный padding для выравнивания высоты */
+            margin: 0 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 40px; /* Фиксированная ширина кнопок */
+            height: 30px; /* Уменьшенная высота кнопок */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 30px; /* Установка высоты строки для выравнивания символов */
+            border: none; /* Убираем рамку */
+            border-radius: 5px; /* Добавляем скругление углов */
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .button-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Выравнивание кнопок по правому краю */
+            width: 120px; /* Фиксированная ширина контейнера с кнопками */
+        }
+        .timer-display {
+            font-size: 24px;
+            margin: 0 10px; /* Уменьшить отступы */
+            width: auto; /* Ширина, равная доступному пространству */
+            display: none; /* Скрыть таймер по умолчанию */
+            transition: background-color 0.3s, color 0.3s;
+            flex: 1; /* Занимает доступное пространство */
+            text-align: center; /* Выравнивание текста по центру */
+        }
+        .tag-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+            flex-wrap: wrap; /* Добавляем автоперенос тегов */
+            width: 90%; /* Ширина в 90% */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .total-time-list {
+            text-align: left;
+            table-layout: fixed;
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+        .total-time-list th, .total-time-list td {
+            padding: 3px;
+            text-align: left;
+            width: auto; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .tag {
+            margin: 0 5px 5px 5px; /* Добавляем отступ снизу для разделения строк */
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .tag.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .tag.disabled {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .event-log {
+            margin-top: 20px;
+            text-align: left;
+            width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .event-log p {
+            margin: 5px 0;
+        }
+
+        /* Стили для таблицы тегов */
+        #tagTable {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        #tagTable td {
+            vertical-align: middle;
+        }
+
+        #tagTable button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            background-color: #666;
+            color: #A9A9A9;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            display: inline-block;
+            width: fit-content;
+            line-height: normal;
+        }
+
+        #tagTable button:hover {
+            background-color: #8f911c;
+            color: #333333;
+        }
+
+        /* Стили для таблицы цветов */
+        #colorTable {
+            margin-bottom: 20px;
+            /* width: 100%; */
+            width: fit-content;
+        }
+
+        #colorTable td {
+            vertical-align: middle;
+        }
+
+        #colorTable th {
+            width: 70pt;
+        }
+
+        #colorTable button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            background-color: #666;
+            color: #A9A9A9;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            display: inline-block;
+            width: fit-content;
+            line-height: normal;
+        }
+
+        #colorTable button:hover {
+            background-color: #8f911c;
+            color: #333333;
+        }
+
+        .td-color-actions {
+            display: flex;
+        }
+
+        .color-editor, .tag-editor {
+            display: inline-block;
+        }
+
+        /* Стили для полей ввода и кнопок */
+        .tag-actions, .color-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .tag-actions input, .color-actions input {
+            padding: 5px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #666;
+            color: #A9A9A9;
+        }
+
+        .tag-actions button, .color-actions button {
+            /* padding: 5px 10px; */
+            background-color: #666;
+            color: #A9A9A9;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            width: fit-content;
+        }
+
+        .tag-actions button:hover, .color-actions button:hover {
+            background-color: #8f911c;
+            color: #333333;
+        }
+
+
+        /* Медиа-запрос для мобильных устройств */
+        @media (max-width: 600px) {
+            .input-container {
+                flex-wrap: wrap; /* Перенос элементов на новую строку */
+            }
+            .timer-label {
+                width: 100%; /* Тег занимает всю ширину */
+                text-align: center; /* Выравнивание по центру */
+            }
+            .input-group {
+                display: flex;
+                justify-content: center;
+                width: 100%; /* Ширина контейнера с полями ввода на всю ширину */
+                margin-top: 10px; /* Отступ сверху */
+            }
+            .button-container {
+                justify-content: center; /* Выравнивание кнопок по центру */
+                width: 100%; /* Ширина контейнера с кнопками на всю ширину */
+                margin-top: 10px; /* Отступ сверху */
+            }
+            .timer-display {
+                width: 100%; /* Ширина таймера на всю ширину */
+                margin: 10px 0; /* Отступы */
+            }
+
+        }
+
+        /* Темная тема */
+        body.dark-theme {
+            background-color: #333333;
+            color: #A9A9A9;
+        }
+        .dark-theme input[type="number"],
+        .dark-theme textarea,
+        .dark-theme button,
+        .dark-theme .timer-display,
+        .dark-theme .tag,
+        .dark-theme .event-log {
+            background-color: #404040;
+            color: #A9A9A9;
+            border-color: #323232;
+        }
+        .dark-theme .tag.active {
+            background-color: #8f911c;
+            color: #333333;
+        }
+        .dark-theme .tag.disabled {
+            background-color: #323232;
+            color: #666;
+        }
+
+        /* Светлая тема */
+        body.light-theme {
+            background-color: #ffffff; /* Светлый фон */
+            color: #000000;
+        }
+        .light-theme input[type="number"],
+        .light-theme textarea,
+        .light-theme button,
+        .light-theme .timer-display,
+        .light-theme .tag,
+        .light-theme .event-log {
+            background-color: #666; /* Светло-серый фон */
+            color: #000000;
+            border-color: #cccccc;
+        }
+        .light-theme .tag.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .light-theme .tag.disabled {
+            background-color: #666;
+            color: #aaa;
+        }
+
+        /* Переключатель темы */
+        .theme-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+        }
+
+        /* Выделение заголовка */
+        h1 {
+            color: #B2B525; /* Светло-желто-зеленый цвет */
+        }
+
+        /* Анимация для изменения цвета фона */
+        @keyframes highlightRed {
+            0% { background-color: #404040; }
+            50% { background-color: #ff6347; }
+            100% { background-color: #404040; }
+        }
+
+        .highlight-red {
+            animation: highlightRed 0.5s ease-in-out;
+        }
+
+        /* Добавляем стили для отображения общего времени */
+        .total-time-display {
+            width: 90%;
+            margin-top: 10px;
+            font-size: 1.2em;
+            color: #B2B525;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <h1>Таймер PROmodoro</h1>
+    
+    <!-- Переключатель темы -->
+    <div class="theme-toggle" onclick="toggleTheme()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+            <path d="M0 0h24v24H0z" fill="none"/>
+            <path d="M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm0-10c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/>
+        </svg>
+    </div>
+
+    <!-- Вкладки -->
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('timers')">Timers</div>
+        <div class="tab" onclick="showTab('tags')">Tags</div>
+        <div class="tab" onclick="showTab('settings')">Settings</div>
+    </div>
+
+    <!-- Контент вкладок -->
+    <div id="timers" class="tab-content active">
+        <div class="timer-container">
+            <div class="input-container" id="timerInputs">
+                <div class="timer-label" id="timerLabel">WORK</div>
+                <div class="input-group">
+                    <input type="number" id="timerHours" placeholder="Часы" value="0" min="0" max="24">
+                    <input type="number" id="timerMinutes" placeholder="Минуты" value="25" min="0" max="59">
+                    <input type="number" id="timerSeconds" placeholder="Секунды" value="0" min="0" max="59">
+                </div>
+                <div class="timer-display" id="timerDisplay">
+                    <span id="timerTime">00:00:00</span>
+                </div>
+                <div class="button-container">
+                    <button id="startPauseButton" onclick="toggletimerTimer()">▶</button>
+                    <button id="stopButton" onclick="stopTimer('work')" disabled="true">■</button>
+                </div>
+            </div>
+            <textarea id="timerComment" rows="4" placeholder="Комментарий к активности"></textarea>
+            <div class="total-time-display" id="totalTimeDisplay"></div>
+            <div class="tag-container">
+                <div class="tag" onclick="selectTag(this, '#WORK')">#WORK</div>
+                <div class="tag" onclick="selectTag(this, '#WORK_25m')">#WORK_25m</div>
+                <div class="tag" onclick="selectTag(this, '#REST')">#REST</div>
+                <div class="tag" onclick="selectTag(this, '#REST_5m')">#REST_5m</div>
+                <div class="tag" onclick="selectTag(this, '#REST_10m')">#REST_10m</div>
+                <div class="tag" onclick="selectTag(this, '#REST_15m')">#REST_15m</div>
+                <div class="tag" onclick="selectTag(this, '#WALK')">#WALK</div>
+                <div class="tag" onclick="selectTag(this, '#WALK_1h')">#WALK_1h</div>
+                <div class="tag" onclick="selectTag(this, '#WALK_1h_10m')">#WALK_1h_10m</div>
+                <div class="tag" onclick="selectTag(this, '#WALK_1h_30m')">#WALK_1h_30m</div>
+                <div class="tag" onclick="selectTag(this, '#WALK_30m')">#WALK_30m</div>
+                <div class="tag" onclick="selectTag(this, '#LONG_REST')">#LONG_REST</div>
+                <div class="tag" onclick="selectTag(this, '#SPORT')">#SPORT</div>
+                <div class="tag" onclick="selectTag(this, '#MEDITATION')">#MEDITATION</div>
+            </div>
+            <div class="event-log" id="eventLog"></div>
+        </div>
+    </div>
+
+    <div id="tags" class="tab-content">
+        <h2>Редактор тегов</h2>
+        <div class="tag-editor">
+            <table id="tagTable">
+                <thead>
+                    <tr>
+                        <th>Тег</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Здесь будут строки с тегами -->
+                </tbody>
+            </table>
+            <div class="tag-actions">
+                <input type="text" id="newTagInput" placeholder="Новый тег">
+                <button onclick="addTag()">Добавить тег</button>
+            </div>
+        </div>
+    
+        <h2>Редактор цветов тегов</h2>
+        <div class="color-editor">
+            <table id="colorTable">
+                <thead>
+                    <tr>
+                        <th>Тег</th>
+                        <th>Цвет</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Здесь будут строки с цветами тегов -->
+                </tbody>
+            </table>
+            <div class="color-actions">
+                <input type="text" id="newColorTagInput" placeholder="Тег">
+                <input type="color" id="newColorInput">
+                <button onclick="addColor()">Добавить цвет</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings" class="tab-content">
+        <!-- Здесь будет контент для вкладки Settings -->
+        Когда-нибудь здесь будут настройки... Но это не точно.
+    </div>
+
+    <script>
+        let db;
+        let tagList = [];
+        let tagColors = {};
+        let interval;
+        let TimeLeft;
+        let isPaused = false;
+        let currentTag = '#WORK';
+        let currentCleanTag = 'WORK';
+        let startTime;
+        let pauseTime;
+        let totalPausedTime = 0;
+        let logPref;
+        let totalAccumulatedSeconds = 0; // Глобальная переменная для накопления времени
+        let lastUpdateTime = 0; // Время последнего обновления
+        let totalTimeInterval; // Интервал для обновления общего времени
+        var tagCounters = {}; // Счётчики для отдельных тегов
+
+        // Инициализация базы данных и отображение тегов
+        initializeDatabase().then(() => {
+            displayTags();
+        }).catch(error => {
+            console.error("Ошибка при инициализации базы данных:", error);
+        });
+
+        document.getElementById('timerHours').addEventListener('input', function() { validateInput(this, 0, 23); });
+        document.getElementById('timerMinutes').addEventListener('input', function() { validateInput(this, 0, 59); });
+        document.getElementById('timerSeconds').addEventListener('input', function() { validateInput(this, 0, 59); });
+
+
+        // Функция для инициализации базы данных и получения тегов
+        function initializeDatabase() {
+            return new Promise((resolve, reject) => {
+                // Открываем базу данных "tagDatabase" версии 1
+                const request = indexedDB.open("tagDatabase", 1);
+
+                // Обрабатываем событие обновления схемы базы данных
+                request.onupgradeneeded = (event) => {
+                    db = event.target.result;
+
+                    // Создаем объектное хранилище "tagColors" с ключом "tag" и "tags" с ключом "tag"
+                    if (!db.objectStoreNames.contains("tagColors")) { db.createObjectStore("tagColors", { keyPath: "tag" }); }
+                    if (!db.objectStoreNames.contains("tags")) { db.createObjectStore("tags", { keyPath: "tag" }); }
+                };
+
+                // Обрабатываем успешное открытие базы данных
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+
+                    // Проверяем наличие объектных хранилищ
+                    if (!db.objectStoreNames.contains("tagColors") || !db.objectStoreNames.contains("tags")) {
+                        console.error("Объектные хранилища не существуют. Пожалуйста, обновите схему базы данных.");
+                        reject("Объектные хранилища не существуют.");
+                        return;
+                    }
+
+                    // Проверяем наличие записей в объектных хранилищах
+                    Promise.all([getTagColors(db), getTags(db)]).then(([colors, tags]) => {
+                        // Преобразуем массив цветов в объект для более быстрого доступа
+                        tagColors = colors.reduce((acc, colorObj) => {
+                            acc[colorObj.tag] = colorObj.color;
+                            return acc;
+                        }, {});
+
+                        tagList = tags;
+
+                        if (Object.keys(tagColors).length === 0 && tagList.length === 0) {
+                            // Добавляем начальные данные, если хранилища пусты
+                            addInitialData(db).then(() => {
+                                // После добавления данных снова получаем их и отображаем
+                                getTagColors(db).then(colors => {
+                                    tagColors = colors.reduce((acc, colorObj) => {
+                                        acc[colorObj.tag] = colorObj.color;
+                                        return acc;
+                                    }, {});
+                                    getTags(db).then(tags => {
+                                        tagList = tags;
+                                        displayTagTable(); // Отображаем таблицу тегов
+                                        displayColorTable(); // Отображаем таблицу цветов
+                                        resolve();
+                                    });
+                                });
+                            });
+                        } else {
+                            // Отображаем данные, если они уже есть
+                            displayTagTable(); // Отображаем таблицу тегов
+                            displayColorTable(); // Отображаем таблицу цветов
+                            resolve();
+                        }
+                    });
+                };
+
+                // Обрабатываем ошибку открытия базы данных
+                request.onerror = (event) => {
+                    console.error("Ошибка при открытии базы данных:", event.target.error);
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        // Функция для добавления начальных данных при их отсутствии
+        function addInitialData(db) {
+            return new Promise((resolve, reject) => {
+                const initialTags = [
+                    { tag: "#WORK" }, { tag: "#WORK_25m" }, { tag: "#REST" }, { tag: "#REST_5m" },
+                    { tag: "#REST_15m" }, { tag: "#WALK" }, { tag: "#WALK_30m" }, { tag: "#WALK_1h" },
+                    { tag: "#LONG_REST" }, { tag: "#SPORT" }, { tag: "#MEDITATION" }
+                ];
+
+                const initialTagColors = [
+                    { tag: "#WORK", color: "#ff8181" },
+                    { tag: "#REST", color: "#aaff81" },
+                    { tag: "#LONG_REST", color: "#50ff52" },
+                    { tag: "#WALK", color: "#50fff5" },
+                    { tag: "#MEDITATION", color: "#8facf9" },
+                    { tag: "#SPORT", color: "#f9c18f" }
+                ];
+
+                const transaction = db.transaction(["tagColors", "tags"], "readwrite");
+                const tagColorsStore = transaction.objectStore("tagColors");
+                const tagsStore = transaction.objectStore("tags");
+
+                initialTagColors.forEach(color => {
+                    tagColorsStore.add(color);
+                });
+
+                initialTags.forEach(tag => {
+                    tagsStore.add(tag);
+                });
+
+                transaction.oncomplete = () => {
+                    resolve();
+                };
+
+                transaction.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        // Функция для получения данных из объектного хранилища "tagColors"
+        function getTagColors(db) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction("tagColors", "readonly");
+                const objectStore = transaction.objectStore("tagColors");
+                const getAllRequest = objectStore.getAll();
+
+                getAllRequest.onsuccess = (event) => {
+                    resolve(event.target.result);
+                };
+
+                getAllRequest.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        // Функция для получения данных из объектного хранилища "tags"
+        function getTags(db) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction("tags", "readonly");
+                const objectStore = transaction.objectStore("tags");
+                const getAllRequest = objectStore.getAll();
+
+                getAllRequest.onsuccess = (event) => {
+                    resolve(event.target.result);
+                };
+
+                getAllRequest.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        function selectTag(tagElement, tag) {
+            if (tagElement.classList.contains('disabled')) return;
+            document.querySelectorAll('.tag').forEach(tag => tag.classList.remove('active'));
+            tagElement.classList.add('active');
+            currentTag = tag;
+            currentCleanTag = cleanTag(tag);
+
+            let tempTag = tag; let hours = 0; let minutes = 0; let seconds = 0; let hasTime = false;
+            const secondsMatch = tempTag.match(/_?(\d*)s?$/);
+            if (secondsMatch[0]) { seconds = parseInt(secondsMatch[1]) || 0; tempTag = tempTag.replace(/_?(\d*)s?$/, ''); hasTime = true; }
+            const minutesMatch = tempTag.match(/_?(\d*)m?$/);
+            if (minutesMatch[0]) { minutes = parseInt(minutesMatch[1]) || 0; tempTag = tempTag.replace(/_?(\d*)m?$/, ''); hasTime = true; }
+            const hoursMatch = tempTag.match(/_?(\d*)h?$/);
+            if (hoursMatch[0]) { hours = parseInt(hoursMatch[1]) || 0; tempTag = tempTag.replace(/_?(\d*)h?$/, ''); hasTime = true; }
+
+            if (hasTime) {
+                document.getElementById('timerHours').value = hours;
+                document.getElementById('timerMinutes').value = minutes;
+                document.getElementById('timerSeconds').value = seconds;
+            }
+
+            document.getElementById('timerLabel').textContent = tempTag.slice(1); // Убираем #
+        }
+
+
+
+        // Функция для отображения тегов в соответствии с требованиями
+        function displayTags() {
+            const tagContainer = document.querySelector(".tag-container");
+            tagContainer.innerHTML = ""; // Очищаем контейнер
+            tagList.forEach(tagObj => {
+                const tag = tagObj.tag;
+                const cleanTagPrefix = '#' + cleanTag(tag);
+                const color = tagColors[cleanTagPrefix];
+                const tagElement = document.createElement("div");
+                tagElement.className = "tag";
+                tagElement.textContent = tag;
+                tagElement.onclick = () => selectTag(tagElement, tag);
+                if (color) {
+                    tagElement.style.color = color;
+                }
+                tagContainer.appendChild(tagElement);
+            });
+        }
+
+
+
+        function toggletimerTimer() {
+            const startButton = document.getElementById("startPauseButton");
+            const stopButton = document.getElementById("stopButton")
+            const comment = document.getElementById('timerComment').value.trim();
+            logPref = `${cleanTag(currentTag)}${comment ? ` (${comment})` : ''}`;
+
+            const hours = parseInt(document.getElementById('timerHours').value);
+            const minutes = parseInt(document.getElementById('timerMinutes').value);
+            const seconds = parseInt(document.getElementById('timerSeconds').value);
+
+            if (hours === 0 && minutes === 0 && seconds === 0) {
+                // Если все поля ввода времени равны нулю, подсвечиваем их красным
+                document.getElementById('timerHours').classList.add('highlight-red');
+                document.getElementById('timerMinutes').classList.add('highlight-red');
+                document.getElementById('timerSeconds').classList.add('highlight-red');
+
+                setTimeout(() => {
+                    document.getElementById('timerHours').classList.remove('highlight-red');
+                    document.getElementById('timerMinutes').classList.remove('highlight-red');
+                    document.getElementById('timerSeconds').classList.remove('highlight-red');
+                }, 500);
+
+                return; // Не запускаем таймер
+            }
+
+            stopButton.disabled = false;
+            console.log(stopButton.disabled);
+            if (startButton.textContent === "▶") {
+                if (!isPaused) {
+                    TimeLeft = (hours * 3600) + (minutes * 60) + seconds;
+                    startTime = new Date();
+                    totalPausedTime = 0; // Сбрасываем время паузы
+                    logEvent(`Начало таймера: ${logPref}`, startTime);
+                    document.getElementById('timerComment').disabled = true; // Делаем поле комментария недоступным
+                } else {
+                    const now = new Date();
+                    totalPausedTime += (now - pauseTime);
+                    logEvent(`Продолжение таймера: ${logPref}`, now);
+                }
+
+                if (interval) clearInterval(interval);
+
+                // Скрыть поля ввода
+                document.getElementById('timerInputs').querySelectorAll('input').forEach(input => input.style.display = 'none');
+                const timerDisplay = document.getElementById('timerDisplay');
+                timerDisplay.style.display = 'inline'; // Показать таймер
+                updatetimerDisplay(TimeLeft);
+
+                // Блокировать теги
+                document.querySelectorAll('.tag').forEach(tag => tag.classList.add('disabled'));
+
+                interval = setInterval(() => {
+                    TimeLeft--;
+                    updatetimerDisplay(TimeLeft);
+
+                    if (TimeLeft <= 0) {
+                        clearInterval(interval);
+                        const endTime = new Date();
+                        const totalTime = (endTime - startTime) - totalPausedTime;
+                        completeTimer('work', endTime, totalTime);
+                    }
+                }, 1000);
+
+                startButton.textContent = "⏸";
+                isPaused = false;
+
+                // Запускаем интервал для обновления общего времени
+                if (!totalTimeInterval) {
+                    totalTimeInterval = setInterval(updateTotalTime, 1000);
+                }
+            } else {
+                // Пауза таймера
+                clearInterval(interval);
+                pauseTime = new Date();
+                logEvent(`Приостановка таймера: ${logPref}`, pauseTime);
+                startButton.textContent = "▶";
+                isPaused = true;
+
+                // Останавливаем интервал для обновления общего времени
+                clearInterval(totalTimeInterval);
+                totalTimeInterval = null;
+            }
+        }
+
+        function updatetimerDisplay(totalTime) {
+            const minutes = Math.floor(totalTime / 60);
+            const seconds = totalTime % 60;
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = minutes % 60;
+            document.getElementById('timerTime').textContent = `${String(hours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function stopTimer(type) {
+            if (type === 'work') {
+                clearInterval(interval);
+                TimeLeft = null;
+                document.getElementById('timerDisplay').style.display = 'none'; // Скрыть таймер
+                document.getElementById('timerTime').textContent = "00:00:00";
+                document.getElementById('timerInputs').querySelectorAll('input').forEach(input => input.style.display = 'inline-block'); // Показать поля ввода
+                isPaused = false; // Сбросить статус паузы
+                document.getElementById("startPauseButton").textContent = "▶"; // Вернуть текст кнопки
+                document.getElementById('timerComment').disabled = false; // Делаем поле комментария доступным
+
+                // Разблокировать теги
+                document.querySelectorAll('.tag').forEach(tag => tag.classList.remove('disabled'));
+
+                const endTime = new Date();
+                const totalTime = (endTime - startTime) - totalPausedTime;
+                logEvent(`Отмена таймера: ${logPref} Общее время: ${formatTime(totalTime)}`, endTime);
+                updateTotalTimeDisplay();
+
+                // Останавливаем интервал для обновления общего времени
+                clearInterval(totalTimeInterval);
+                totalTimeInterval = null;
+                document.getElementById("stopButton").disabled = true;
+            }
+        }
+
+        function completeTimer(type, endTime, totalTime) {
+            if (type === 'work') {
+                clearInterval(interval);
+                TimeLeft = null;
+                document.getElementById('timerDisplay').style.display = 'none'; // Скрыть таймер
+                document.getElementById('timerTime').textContent = "00:00:00";
+                document.getElementById('timerInputs').querySelectorAll('input').forEach(input => input.style.display = 'inline-block'); // Показать поля ввода
+                isPaused = false; // Сбросить статус паузы
+                document.getElementById("startPauseButton").textContent = "▶"; // Вернуть текст кнопки
+                document.getElementById("stopButton").disabled = true;
+                document.getElementById('timerComment').disabled = false; // Делаем поле комментария доступным
+            
+                // Разблокировать теги
+                document.querySelectorAll('.tag').forEach(tag => tag.classList.remove('disabled'));
+
+                logEvent(`Завершение таймера: ${logPref} Общее время: ${formatTime(totalTime)}`, endTime);
+                tagCounters[currentCleanTag] += 1;
+                updateTotalTimeDisplay();
+
+                // Останавливаем интервал для обновления общего времени
+                clearInterval(totalTimeInterval);
+                totalTimeInterval = null;
+                playMelodicChime();
+                setTimeout(() => {alert(`Таймер ${logPref} завершён`);}, 1200);
+            }
+        }
+
+        function logEvent(message, time) {
+            const eventLog = document.getElementById('eventLog');
+            const eventTime = time.toLocaleTimeString();
+            const color = tagColors['#' + currentCleanTag];
+            eventLog.innerHTML += `<p style="color: ${color}">${eventTime} - ${message}</p>`;
+        }
+
+        function formatTime(totalTime) {
+            const totalSeconds = Math.floor(totalTime / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = minutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function cleanTag(tag) {
+            return tag.replace(/_?(\d*)s?$/, '').replace(/_?(\d*)m?$/, '').replace(/_(\d+)h$/, '').slice(1);
+        }
+
+        function playMelodicChime() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Массив с частотами для мелодичной трели
+            const frequencies = [440, 523.25, 659.25, 783.99, 880]; // A4, C5, E5, G5, A5
+
+            // Функция для создания и запуска осциллятора
+            function createOscillator(frequency, duration) {
+                const oscillator = audioContext.createOscillator();
+                oscillator.type = 'sine'; // Тип волны (синусоида)
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+                const gainNode = audioContext.createGain();
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // Громкость
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + duration);
+            }
+
+            // Запускаем осцилляторы последовательно
+            let startTime = audioContext.currentTime;
+            frequencies.forEach((frequency, index) => {
+                setTimeout(() => {
+                    createOscillator(frequency, 0.2); // Длительность звука 0.2 секунды
+                }, index * 200); // Интервал между звуками 200 миллисекунд
+            });
+        }
+
+        // Обработчики для ограничения ввода значений
+        function validateInput(input, min, max) {
+            let value = input.value.replace(/^0+/, ''); // Убираем ведущие нули
+            if (value === '') {
+                value = '0'; // Если значение пустое, устанавливаем 0
+            }
+            value = parseInt(value);
+            if (isNaN(value) || value < min) {
+                input.value = min;
+            } else if (value > max) {
+                input.value = max;
+            } else {
+                input.value = value;
+            }
+        }
+
+        // Переключение темы
+        function toggleTheme() {
+            const body = document.body;
+            body.classList.toggle('dark-theme');
+            body.classList.toggle('light-theme');
+            const themeToggle = document.querySelector('.theme-toggle svg');
+            if (body.classList.contains('dark-theme')) {
+                themeToggle.innerHTML = `
+                    <path d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm0-10c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/>
+                `;
+            } else {
+                themeToggle.innerHTML = `
+                    <path d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>
+                `;
+            }
+        }
+
+        // Обновление отображения общего времени
+        function updateTotalTimeDisplay() {
+            let tagTotalTime = 0;
+            let totalTimeList = '<table class="total-time-list"><tr><th>TAG</th><th>Total</th></tr>';
+            for (t in tagCounters) {
+                const totalHours = Math.floor(tagCounters[t] / 3600);
+                const totalMinutes = Math.floor((tagCounters[t] % 3600) / 60);
+                const totalSeconds = tagCounters[t] % 60;
+                totalTimeList += `<tr><td align="left">${String(t)}:</td><td align="left">${String(totalHours).padStart(2, '0')}:${String(totalMinutes).padStart(2, '0')}:${String(totalSeconds).padStart(2, '0')}</td></tr>`;
+            }
+            document.getElementById('totalTimeDisplay').innerHTML = totalTimeList + '</table>';
+        }
+
+        // Обновление общего времени каждую секунду
+        function updateTotalTime() {
+            const now = new Date();
+            const elapsedTime = now - startTime - totalPausedTime;
+            const elapsedSeconds = Math.floor(elapsedTime / 1000);
+            if (currentCleanTag in tagCounters) {
+                tagCounters[currentCleanTag] += 1;
+            } else {
+                tagCounters[currentCleanTag] = 1;
+            }
+            updateTotalTimeDisplay();
+        }
+
+        // Функция для отображения выбранной вкладки
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tabContent => {
+                tabContent.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`.tab[onclick="showTab('${tabName}')"]`).classList.add('active');
+        }
+
+        // Функция для отображения тегов в таблице
+        function displayTagTable() {
+            const tagTableBody = document.querySelector("#tagTable tbody");
+            tagTableBody.innerHTML = ""; // Очищаем таблицу
+            tagList.forEach((tagObj, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${tagObj.tag}</td>
+                    <td class="td-tag-actions">
+                        <button onclick="editTag(${index})">Изменить</button><button onclick="deleteTag(${index})">Удалить</button>
+                    </td>
+                `;
+                tagTableBody.appendChild(row);
+            });
+        }
+
+        // Функция для добавления нового тега
+        function addTag() {
+            const newTagInput = document.getElementById("newTagInput");
+            const newTag = newTagInput.value.trim();
+            if (newTag) {
+                tagList.push({ tag: newTag });
+                saveTagsToDB(tagList);
+                displayTagTable();
+                displayTags();
+                newTagInput.value = "";
+            }
+        }
+
+        // Функция для редактирования тега
+        function editTag(index) {
+            const newTag = prompt("Введите новый тег:", tagList[index].tag);
+            if (newTag) {
+                tagList[index].tag = newTag;
+                saveTagsToDB(tagList);
+                displayTagTable();
+                displayTags();
+            }
+        }
+
+        // Функция для удаления тега
+        function deleteTag(index) {
+            tagList.splice(index, 1);
+            saveTagsToDB(tagList);
+            displayTagTable();
+            displayTags();
+        }
+
+        // Функция для сохранения тегов в indexedDB
+        function saveTagsToDB(tags) {
+            const transaction = db.transaction("tags", "readwrite");
+            const objectStore = transaction.objectStore("tags");
+            objectStore.clear();
+            tags.forEach(tag => {
+                objectStore.add(tag);
+            });
+        }
+
+        // Функция для отображения цветов тегов в таблице
+        function displayColorTable() {
+            const colorTableBody = document.querySelector("#colorTable tbody");
+            colorTableBody.innerHTML = ""; // Очищаем таблицу
+            Object.keys(tagColors).forEach((tag, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${tag}</td>
+                    <td style="background-color: ${tagColors[tag]}; color: #333">${tagColors[tag]}</td>
+                    <td class="td-color-actions">
+                        <button onclick="editColor(${index})">Изменить</button><button onclick="deleteColor(${index})">Удалить</button>
+                    </td>
+                `;
+                colorTableBody.appendChild(row);
+            });
+        }
+
+        // Функция для добавления нового цвета
+        function addColor() {
+            const newColorTagInput = document.getElementById("newColorTagInput");
+            const newColorInput = document.getElementById("newColorInput");
+            const newTag = newColorTagInput.value.trim();
+            const newColor = newColorInput.value;
+            if (newTag && newColor) {
+                tagColors[newTag] = newColor;
+                saveColorsToDB(tagColors);
+                displayColorTable();
+                displayTags();
+                newColorTagInput.value = "";
+                newColorInput.value = "#000000";
+            }
+        }
+
+        // Функция для редактирования цвета
+        function editColor(index) {
+            const tag = Object.keys(tagColors)[index];
+            const newColor = prompt("Введите новый цвет:", tagColors[tag]);
+            if (newColor) {
+                tagColors[tag] = newColor;
+                saveColorsToDB(tagColors);
+                displayColorTable();
+                displayTags();
+            }
+        }
+
+        // Функция для удаления цвета
+        function deleteColor(index) {
+            const tag = Object.keys(tagColors)[index];
+            delete tagColors[tag];
+            saveColorsToDB(tagColors);
+            displayColorTable();
+            displayTags();
+        }
+
+        // Функция для сохранения цветов в indexedDB
+        function saveColorsToDB(colors) {
+            const transaction = db.transaction("tagColors", "readwrite");
+            const objectStore = transaction.objectStore("tagColors");
+            objectStore.clear();
+            Object.keys(colors).forEach(tag => {
+                objectStore.add({ tag: tag, color: colors[tag] });
+            });
+        }
+
+    </script>
+</body>
+</html>
